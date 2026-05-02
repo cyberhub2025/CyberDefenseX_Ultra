@@ -551,10 +551,10 @@ const Overview = () => {
           </div>
           <div className="chart-container">
             <ResponsiveContainer width="100%" height={320}>
-              <BarChart data={attackTypesData} layout="vertical">
+              <BarChart data={attackTypesData} layout="vertical" margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#2a2a5a" />
                 <XAxis type="number" stroke="#6a6a8a" />
-                <YAxis dataKey="type" type="category" stroke="#6a6a8a" width={120} tick={{ fontSize: 10 }} interval={0} />
+                <YAxis dataKey="type" type="category" stroke="#6a6a8a" width={90} tick={{ fontSize: 10 }} interval={0} />
                 <Tooltip
                   contentStyle={{
                     background: '#1a1a3a',
@@ -595,7 +595,7 @@ const Overview = () => {
                   contentStyle={{
                     background: '#1a1a3a',
                     border: '1px solid #2a2a5a',
-                    borderRadius: '8px'
+                    borderRadius: '10px'
                   }}
                   itemStyle={{ color: '#fff' }}
                   labelStyle={{ color: '#fff' }}
