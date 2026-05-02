@@ -224,7 +224,7 @@ export default function Landing() {
             <svg viewBox="0 0 48 48" aria-hidden="true" strokeWidth="2" style={{ width: 36, height: 36 }}>
               <path d="M24 10 L26 22 L38 24 L26 26 L24 38 L22 26 L10 24 L22 22 Z" fill="currentColor" />
             </svg>
-            <span className="text-lg font-medium tracking-tight">ImonChodna</span>
+            <span className="text-lg font-medium tracking-tight">CyberDefenseX</span>
           </a>
 
           <button onClick={() => setMenuOpen((o) => !o)}
