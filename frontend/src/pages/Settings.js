@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Settings as SettingsIcon,
   User,
@@ -28,6 +28,7 @@ const Settings = ({ theme, setTheme, accentColor, setAccentColor, userProfile, s
   const [profileForm, setProfileForm] = useState(userProfile);
   const avatarInputRef = useRef(null);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (location.hash) {
@@ -537,7 +538,7 @@ const Settings = ({ theme, setTheme, accentColor, setAccentColor, userProfile, s
               className={`nav-item ${activeSection === section.id ? 'active' : ''}`}
               onClick={() => {
                 setActiveSection(section.id);
-                window.location.hash = section.id;
+                navigate(`/settings#${section.id}`);
               }}
             >
               <section.icon size={18} />

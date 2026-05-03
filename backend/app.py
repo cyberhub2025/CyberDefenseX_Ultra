@@ -351,9 +351,12 @@ def start_integrity_checker_thread() -> None:
     _integrity_checker_thread = threading.Thread(target=_run_integrity_checker, daemon=True)
     _integrity_checker_thread.start()
 
+# Split FRONTEND_URL by comma to allow multiple origins (e.g. localhost, github pages)
+ALLOWED_ORIGINS = [url.strip() for url in FRONTEND_URL.split(",") if url.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_URL],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
