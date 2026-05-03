@@ -1,15 +1,14 @@
 <div align="center">
-
 <!-- LIVE DEMO & DOCS BADGES -->
+  
 [![Live Demo](https://img.shields.io/badge/🌐%20Live%20Demo-CyberDefenseX-00ffff?style=for-the-badge&logo=github&logoColor=black&labelColor=0f0c29)](https://cyberdefensex.dpdns.org/)
 [![DeepWiki Docs](https://img.shields.io/badge/📚%20Docs-DeepWiki-c792ea?style=for-the-badge&logo=gitbook&logoColor=white&labelColor=302b63)](https://deepwiki.com/cyberhub2025/CyberDefenseX_Ultra)
 [![License](https://img.shields.io/badge/📄%20License-MIT-39ff14?style=for-the-badge&labelColor=1a1a2e)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/🤝%20PRs-Welcome-ff6bcb?style=for-the-badge&labelColor=24243e)](https://github.com/cyberhub2025/CyberDefenseX_Ultra/pulls)
-
 <br/>
 </div>
 <div align="center">
-
+  
 ## 💥 **Autonomous. Transparent. Unbreakable.**
 
 > *A fully autonomous Cyber Defense System combining **real-time AI threat detection**, **blockchain-backed tamper-proof audit logs**, and **self-healing infrastructure** — delivering analyst-grade explainability and automated incident response.*
