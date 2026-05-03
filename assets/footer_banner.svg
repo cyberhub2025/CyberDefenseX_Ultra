@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="120" viewBox="0 0 1500 120">
+  <defs>
+    <linearGradient id="footerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#0f0c29"/>
+      <stop offset="50%" style="stop-color:#302b63"/>
+      <stop offset="100%" style="stop-color:#24243e"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="1500" height="120" fill="url(#footerGrad)"/>
+  <path d="M0,40 Q375,0 750,40 Q1125,80 1500,40 L1500,120 L0,120 Z" fill="#0f0c29" opacity="0.6"/>
+  <path d="M0,60 Q375,20 750,60 Q1125,100 1500,60 L1500,120 L0,120 Z" fill="#302b63" opacity="0.4"/>
+  <text x="750" y="75" text-anchor="middle" font-family="'Courier New', monospace" font-size="22" font-weight="bold" fill="#00ffff" filter="url(#glow)">⚡ Defend. Detect. Dominate. ⚡</text>
+  <text x="750" y="100" text-anchor="middle" font-family="'Courier New', monospace" font-size="11" fill="#c792ea" opacity="0.8">Built with ❤️ by the CyberDefenseX Team — Securing the digital frontier, one block at a time.</text>
+  <line x1="200" y1="55" x2="560" y2="55" stroke="#00ffff" stroke-width="0.5" opacity="0.3"/>
+  <line x1="940" y1="55" x2="1300" y2="55" stroke="#00ffff" stroke-width="0.5" opacity="0.3"/>
+</svg>
