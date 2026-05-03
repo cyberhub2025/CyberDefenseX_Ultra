@@ -6,7 +6,7 @@
 
 ![Social Media (4)](https://github.com/user-attachments/assets/315a9f53-83f1-4a97-9c62-73e65308c705)
 
-[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-GitHub_Pages-blue?style=for-the-badge)](https://cyberhub2025.github.io/CyberDefenseX_Ultra/)
+[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-GitHub_Pages-blue?style=for-the-badge)](https://cyberdefensex.dpdns.org/)
 [![Docs](https://deepwiki.com/badge.svg)](https://deepwiki.com/cyberhub2025/CyberDefenseX_Ultra)
 
 ---
@@ -227,7 +227,7 @@ REACT_APP_BACKEND_API_URL=http://localhost:8000
 
 The frontend is automatically deployed to **GitHub Pages** on every push to `main` via GitHub Actions.
 
-**Live URL:** [https://cyberhub2025.github.io/CyberDefenseX_Ultra/](https://cyberhub2025.github.io/CyberDefenseX_Ultra/)
+**Live URL:** [https://cyberdefensex.dpdns.org/](https://cyberdefensex.dpdns.org/)
 
 To enable deployment on your fork:
 1. Go to **Settings → Pages** in your GitHub repository
