@@ -102,7 +102,13 @@ export default function GetStarted() {
                 </svg>
                 Download backend
               </a>
-
+              <a className="gs-btn gs-glass gs-download" href="/sender.py" download="sender.py">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" focusable="false">
+                  <path d="M12 3a1 1 0 0 1 1 1v9.59l2.3-2.3a1 1 0 1 1 1.4 1.42l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.42l2.3 2.3V4a1 1 0 0 1 1-1z" fill="currentColor" />
+                  <path d="M5 19a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H6a1 1 0 0 1-1-1z" fill="currentColor" />
+                </svg>
+                Download Agent
+              </a>
             </div>
             <div className="gs-pill-row">
               <span>FastAPI</span>
@@ -192,6 +198,40 @@ export default function GetStarted() {
                 <code>{"pip install -r requirements.txt\npython app.py"}</code>
               </pre>
               <p className="gs-muted">Backend API starts at http://localhost:8000</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="gs-section gs-agent">
+          <div className="gs-section-head">
+            <h2>Agent Setup Guide</h2>
+            <p>Deploy the lightweight Python agent (sender.py) on target machines to monitor and forward logs to your central backend.</p>
+          </div>
+          <div className="gs-split">
+            <div className="gs-card">
+              <h3>1. Prerequisites</h3>
+              <p>Ensure Python is installed on the target machine.</p>
+              <pre className="gs-code-block small">
+                <code>{"pip install requests"}</code>
+              </pre>
+            </div>
+            <div className="gs-card">
+              <h3>2. Configuration</h3>
+              <p>Edit <code>sender.py</code> to match your environment:</p>
+              <ul className="gs-reset-list" style={{ marginTop: '0.5rem', marginBottom: '0.5rem' }}>
+                <li><strong>LOG_FILE:</strong> Path to the log file to monitor (e.g., <code>C:\path\to\flask.log</code>).</li>
+                <li style={{ marginTop: '0.5rem' }}><strong>RECEIVER_URL:</strong> Set to your backend API (e.g., <code>http://&lt;backend-ip&gt;:8000/receive-logs</code>).</li>
+                <li style={{ marginTop: '0.5rem' }}><strong>POLL_SECONDS:</strong> Polling interval (default is 30 seconds).</li>
+              </ul>
+            </div>
+          </div>
+          <div className="gs-split" style={{ marginTop: '1.5rem' }}>
+            <div className="gs-card" style={{ flex: '1' }}>
+              <h3>3. Run the Agent</h3>
+              <p>Launch the script to begin streaming logs automatically.</p>
+              <pre className="gs-code-block small">
+                <code>{"python sender.py"}</code>
+              </pre>
             </div>
           </div>
         </section>

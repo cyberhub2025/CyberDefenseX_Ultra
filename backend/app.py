@@ -2105,36 +2105,12 @@ async def reset_all_data(request: Request):
         )
 
     email = (data.get("email") or "").strip().lower()
-    password = (data.get("password") or "")
+    confirmation = (data.get("confirmation") or "").strip()
 
-    if not email or not password:
+    if confirmation != "permanently delete all data":
         return JSONResponse(
-            {"success": False, "message": "Email and password are required"},
+            {"success": False, "message": "Invalid confirmation phrase. Reset aborted."},
             status_code=400,
-        )
-
-    # ── Verify credentials against users.db ──────────────────────────────────
-    conn_users = None
-    try:
-        conn_users = get_db_connection()
-        user = conn_users.execute(
-            "SELECT * FROM users WHERE username=? AND password=?",
-            (email, password),
-        ).fetchone()
-    except Exception as exc:
-        logger.error("reset-all: users.db query failed: %s", exc)
-        return JSONResponse(
-            {"success": False, "message": "Internal server error during authentication"},
-            status_code=500,
-        )
-    finally:
-        if conn_users:
-            conn_users.close()
-
-    if not user:
-        return JSONResponse(
-            {"success": False, "message": "Incorrect password. Reset aborted."},
-            status_code=401,
         )
 
     result_details: dict = {}

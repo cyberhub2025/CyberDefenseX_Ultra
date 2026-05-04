@@ -62,17 +62,15 @@ const Overview = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [assetCount, setAssetCount] = useState(0);
 
-  // Reset All modal state
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
-  const [resetPassword, setResetPassword] = useState('');
+  const [resetInput, setResetInput] = useState('');
   const [resetError, setResetError] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
-  const [showResetPassword, setShowResetPassword] = useState(false);
 
   const handleResetAll = async () => {
-    if (!resetPassword.trim()) {
-      setResetError('Please enter your password.');
+    if (resetInput !== 'permanently delete all data') {
+      setResetError('Please type "permanently delete all data" to confirm.');
       return;
     }
     setResetLoading(true);
@@ -91,7 +89,7 @@ const Overview = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ email, password: resetPassword }),
+        body: JSON.stringify({ email, confirmation: resetInput }),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -100,7 +98,7 @@ const Overview = () => {
         return;
       }
       setResetSuccess(true);
-      setResetPassword('');
+      setResetInput('');
       // Refresh overview data after reset
       setTimeout(() => {
         setIsResetModalOpen(false);
@@ -490,9 +488,8 @@ const Overview = () => {
               onClick={() => {
                 setIsResetModalOpen(true);
                 setResetError('');
-                setResetPassword('');
+                setResetInput('');
                 setResetSuccess(false);
-                setShowResetPassword(false);
               }}
             >
               <RotateCcw size={16} />
@@ -779,14 +776,14 @@ const Overview = () => {
 
       {/* ── Reset All Confirmation Modal ── */}
       {isResetModalOpen && (
-        <div className="reset-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) { setIsResetModalOpen(false); setResetPassword(''); setResetError(''); } }}>
+        <div className="reset-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) { setIsResetModalOpen(false); setResetInput(''); setResetError(''); } }}>
           <div className="reset-modal">
             <div className="reset-modal-header">
               <div className="reset-modal-icon">
                 <AlertOctagon size={28} />
               </div>
               <h2 className="reset-modal-title">Reset All Data</h2>
-              <button className="reset-modal-close" onClick={() => { setIsResetModalOpen(false); setResetPassword(''); setResetError(''); }}>
+              <button className="reset-modal-close" onClick={() => { setIsResetModalOpen(false); setResetInput(''); setResetError(''); }}>
                 <X size={20} />
               </button>
             </div>
@@ -818,26 +815,19 @@ const Overview = () => {
 
                 <div className="reset-password-group">
                   <label className="reset-password-label">
-                    <Lock size={14} />
-                    Confirm your password to proceed
+                    <AlertTriangle size={14} />
+                    Type <strong>permanently delete all data</strong> to confirm
                   </label>
                   <div className="reset-password-input-wrap">
                     <input
-                      type={showResetPassword ? 'text' : 'password'}
+                      type="text"
                       className={`reset-password-input ${resetError ? 'has-error' : ''}`}
-                      placeholder="Enter your current password"
-                      value={resetPassword}
-                      onChange={(e) => { setResetPassword(e.target.value); setResetError(''); }}
+                      placeholder="permanently delete all data"
+                      value={resetInput}
+                      onChange={(e) => { setResetInput(e.target.value); setResetError(''); }}
                       onKeyDown={(e) => { if (e.key === 'Enter') handleResetAll(); }}
                       autoFocus
                     />
-                    <button
-                      type="button"
-                      className="reset-show-pw-btn"
-                      onClick={() => setShowResetPassword(!showResetPassword)}
-                    >
-                      {showResetPassword ? '🙈' : '👁️'}
-                    </button>
                   </div>
                   {resetError && <p className="reset-error-msg">{resetError}</p>}
                 </div>
@@ -845,7 +835,7 @@ const Overview = () => {
                 <div className="reset-modal-actions">
                   <button
                     className="btn-reset-cancel"
-                    onClick={() => { setIsResetModalOpen(false); setResetPassword(''); setResetError(''); }}
+                    onClick={() => { setIsResetModalOpen(false); setResetInput(''); setResetError(''); }}
                   >
                     Cancel
                   </button>

@@ -27,7 +27,7 @@ const OAuthSuccess = ({ setUserProfile }) => {
           email: email
         }));
       }
-      
+
       setStatus('Login successful! Redirecting...');
       setTimeout(() => navigate('/overview'), 1000);
     } else {
