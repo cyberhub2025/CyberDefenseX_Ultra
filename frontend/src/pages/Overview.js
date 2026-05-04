@@ -9,11 +9,13 @@ import {
   TrendingDown,
   Activity,
   Globe,
-  Eye,
   Bell,
   Search,
   X,
-  Trash2
+  Trash2,
+  RotateCcw,
+  Lock,
+  AlertOctagon
 } from 'lucide-react';
 import {
   AreaChart,
@@ -58,6 +60,58 @@ const Overview = () => {
   const [overviewData, setOverviewData] = useState(DEFAULT_OVERVIEW_DATA);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Reset All modal state
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetError, setResetError] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+
+  const handleResetAll = async () => {
+    if (!resetPassword.trim()) {
+      setResetError('Please enter your password.');
+      return;
+    }
+    setResetLoading(true);
+    setResetError('');
+    try {
+      // Get the currently logged-in user's email from localStorage
+      const stored = localStorage.getItem('userProfile');
+      const profile = stored ? JSON.parse(stored) : {};
+      const email = (profile.email || '').trim();
+      if (!email) {
+        setResetError('Could not determine the logged-in user. Please log in again.');
+        setResetLoading(false);
+        return;
+      }
+      const response = await fetch(`${API_BASE_URL}/api/reset-all`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password: resetPassword }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setResetError(data.message || 'Reset failed. Please try again.');
+        setResetLoading(false);
+        return;
+      }
+      setResetSuccess(true);
+      setResetPassword('');
+      // Refresh overview data after reset
+      setTimeout(() => {
+        setIsResetModalOpen(false);
+        setResetSuccess(false);
+        fetchOverview();
+      }, 2000);
+    } catch (err) {
+      setResetError('Server error. Please try again later.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   // Notifications state
   const [notifications, setNotifications] = useState([]);
@@ -280,6 +334,7 @@ const Overview = () => {
   const unreadCount = notifications.length;
 
   return (
+    <>
     <div className="overview">
       <div className="page-header">
         <div className="header-content">
@@ -402,9 +457,18 @@ const Overview = () => {
             <span className="status-dot green"></span>
             Production
           </div>
-          <button className="btn btn-primary" onClick={() => navigate('/reports')}>
-            <Eye size={16} />
-            View Report
+          <button
+            className="btn btn-danger-outline"
+            onClick={() => {
+              setIsResetModalOpen(true);
+              setResetError('');
+              setResetPassword('');
+              setResetSuccess(false);
+              setShowResetPassword(false);
+            }}
+          >
+            <RotateCcw size={16} />
+            Reset All
           </button>
         </div>
       </div>
@@ -676,6 +740,98 @@ const Overview = () => {
         </div>
       </div>
     </div>
+
+      {/* ── Reset All Confirmation Modal ── */}
+      {isResetModalOpen && (
+        <div className="reset-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) { setIsResetModalOpen(false); setResetPassword(''); setResetError(''); } }}>
+          <div className="reset-modal">
+            <div className="reset-modal-header">
+              <div className="reset-modal-icon">
+                <AlertOctagon size={28} />
+              </div>
+              <h2 className="reset-modal-title">Reset All Data</h2>
+              <button className="reset-modal-close" onClick={() => { setIsResetModalOpen(false); setResetPassword(''); setResetError(''); }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {resetSuccess ? (
+              <div className="reset-success-state">
+                <div className="reset-success-icon">
+                  <svg className="reset-checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                    <circle className="reset-checkmark-circle" cx="26" cy="26" r="25" fill="none" />
+                    <path className="reset-checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+                  </svg>
+                </div>
+                <p className="reset-success-text">All data has been reset successfully!</p>
+              </div>
+            ) : (
+              <>
+                <div className="reset-modal-warning">
+                  <p>This action will <strong>permanently delete</strong> all of the following:</p>
+                  <ul className="reset-warning-list">
+                    <li><Trash2 size={14} /> All alerts &amp; threat statuses (DB)</li>
+                    <li><Trash2 size={14} /> All report runs &amp; PDF files</li>
+                    <li><Trash2 size={14} /> All senders &amp; notifications</li>
+                    <li><Trash2 size={14} /> All input logs (input.log)</li>
+                    <li><Trash2 size={14} /> All alert data in Excel files (alerts.xlsx)</li>
+                    <li><Trash2 size={14} /> Blockchain reset to genesis block</li>
+                  </ul>
+                  <p className="reset-warning-note">Tables &amp; files remain intact. Only data is erased. This cannot be undone.</p>
+                </div>      
+
+                <div className="reset-password-group">
+                  <label className="reset-password-label">
+                    <Lock size={14} />
+                    Confirm your password to proceed
+                  </label>
+                  <div className="reset-password-input-wrap">
+                    <input
+                      type={showResetPassword ? 'text' : 'password'}
+                      className={`reset-password-input ${resetError ? 'has-error' : ''}`}
+                      placeholder="Enter your current password"
+                      value={resetPassword}
+                      onChange={(e) => { setResetPassword(e.target.value); setResetError(''); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleResetAll(); }}
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      className="reset-show-pw-btn"
+                      onClick={() => setShowResetPassword(!showResetPassword)}
+                    >
+                      {showResetPassword ? '🙈' : '👁️'}
+                    </button>
+                  </div>
+                  {resetError && <p className="reset-error-msg">{resetError}</p>}
+                </div>
+
+                <div className="reset-modal-actions">
+                  <button
+                    className="btn-reset-cancel"
+                    onClick={() => { setIsResetModalOpen(false); setResetPassword(''); setResetError(''); }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className={`btn-reset-confirm ${resetLoading ? 'loading' : ''}`}
+                    onClick={handleResetAll}
+                    disabled={resetLoading}
+                  >
+                    {resetLoading ? (
+                      <span className="reset-spinner"></span>
+                    ) : (
+                      <RotateCcw size={15} />
+                    )}
+                    {resetLoading ? 'Resetting...' : 'Reset All Data'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
