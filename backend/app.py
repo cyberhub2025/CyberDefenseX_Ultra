@@ -908,9 +908,22 @@ def build_overview_payload(alerts: List[Dict[str, str]]) -> Dict[str, Any]:
             }
         )
 
+    def _extract_id_number(alert):
+        """Extract the numeric portion of a threat ID for sorting (e.g. 'ALERT-0042' -> 42)."""
+        raw = alert.get("id") or ""
+        # Try to pull digits from the end (handles 'ALERT-0042', 'THR-123', etc.)
+        match = re.search(r"(\d+)$", raw)
+        if match:
+            return int(match.group(1))
+        # Fallback: try converting the whole thing
+        try:
+            return int(raw)
+        except (ValueError, TypeError):
+            return 0
+
     sorted_alerts = sorted(
         parsed_rows,
-        key=lambda a: a["detected_dt"] or datetime.min,
+        key=_extract_id_number,
         reverse=True,
     )
     recent_alerts = [
@@ -1745,6 +1758,34 @@ async def api_download_report(report_id: str):
     )
 
 
+@app.delete("/api/reports/{report_id}")
+async def api_delete_report(report_id: str):
+    conn = get_app_data_db_connection()
+    try:
+        row = conn.execute(
+            "SELECT file_path FROM report_runs WHERE report_id = ?",
+            (report_id,),
+        ).fetchone()
+
+        if not row:
+            return JSONResponse({"message": "Report not found."}, status_code=404)
+
+        file_path = row["file_path"]
+
+        conn.execute("DELETE FROM report_runs WHERE report_id = ?", (report_id,))
+        conn.commit()
+    finally:
+        conn.close()
+
+    # Delete the PDF file from disk
+    if file_path and os.path.exists(file_path):
+        try:
+            os.remove(file_path)
+        except OSError:
+            pass  # File already gone or locked – DB row is already removed
+
+    return JSONResponse({"message": "Report deleted successfully.", "id": report_id})
+
 ATTACK_TYPE_COLORS = [
     "#b07cf8",  # purple
     "#00d4ff",  # cyan
@@ -1944,6 +1985,183 @@ async def api_get_assets():
 async def receive_logs(request: Request):
     return await receive_logs_handler(request)
 
+
+# ---------------------------------------------------------------------------
+# Reset-All endpoint — clears all operational data (requires password auth)
+# ---------------------------------------------------------------------------
+@app.post("/api/reset-all")
+async def reset_all_data(request: Request):
+    """
+    Full system reset — wipes ALL operational data:
+      • app_data.db tables (alerts, threat_status, report_runs, senders, notifications)
+      • All PDF reports from disk
+      • input.log — truncated to empty
+      • alerts.xlsx, alerts_backup.xlsx, excel2.xlsx — cleared to headers-only
+      • Leader blockchain (blockchain.json) — reset to genesis block only
+      • Worker blockchain (/admin/reset HTTP call) — reset to genesis block only
+    Tables and files are preserved; only their contents are cleared.
+    The caller must supply the password of the currently-logged-in user.
+    """
+    try:
+        data = await request.json()
+    except Exception:
+        return JSONResponse(
+            {"success": False, "message": "Invalid request body — JSON expected"},
+            status_code=400,
+        )
+
+    email = (data.get("email") or "").strip().lower()
+    password = (data.get("password") or "")
+
+    if not email or not password:
+        return JSONResponse(
+            {"success": False, "message": "Email and password are required"},
+            status_code=400,
+        )
+
+    # ── Verify credentials against users.db ──────────────────────────────────
+    conn_users = None
+    try:
+        conn_users = get_db_connection()
+        user = conn_users.execute(
+            "SELECT * FROM users WHERE username=? AND password=?",
+            (email, password),
+        ).fetchone()
+    except Exception as exc:
+        logger.error("reset-all: users.db query failed: %s", exc)
+        return JSONResponse(
+            {"success": False, "message": "Internal server error during authentication"},
+            status_code=500,
+        )
+    finally:
+        if conn_users:
+            conn_users.close()
+
+    if not user:
+        return JSONResponse(
+            {"success": False, "message": "Incorrect password. Reset aborted."},
+            status_code=401,
+        )
+
+    result_details: dict = {}
+
+    # ── 1. Wipe all tables in app_data.db ────────────────────────────────────
+    deleted_rows: dict = {}
+    conn_data = None
+    try:
+        conn_data = get_app_data_db_connection()
+        tables_to_clear = ["alerts", "threat_status", "report_runs", "senders", "notifications"]
+        for table in tables_to_clear:
+            try:
+                cursor = conn_data.execute(f"DELETE FROM {table}")
+                deleted_rows[table] = cursor.rowcount
+            except Exception as exc:
+                logger.warning("reset-all: could not clear table %s: %s", table, exc)
+        conn_data.commit()
+        alerts_cache.invalidate()
+        logger.info("reset-all: cleared tables %s by user %s", list(deleted_rows.keys()), email)
+    except Exception as exc:
+        logger.error("reset-all: app_data.db wipe failed: %s", exc)
+        return JSONResponse(
+            {"success": False, "message": "Failed to clear database tables"},
+            status_code=500,
+        )
+    finally:
+        if conn_data:
+            conn_data.close()
+
+    result_details["tablesCleared"] = deleted_rows
+
+    # ── 2. Delete all PDF reports from disk ──────────────────────────────────
+    deleted_pdfs: list = []
+    skipped_pdfs: list = []
+    try:
+        if os.path.isdir(REPORTS_DIR):
+            for fname in os.listdir(REPORTS_DIR):
+                if fname.lower().endswith(".pdf"):
+                    fpath = os.path.join(REPORTS_DIR, fname)
+                    try:
+                        os.remove(fpath)
+                        deleted_pdfs.append(fname)
+                    except Exception as exc:
+                        logger.warning("reset-all: could not delete %s: %s", fpath, exc)
+                        skipped_pdfs.append(fname)
+        logger.info("reset-all: deleted %d PDFs, skipped %d", len(deleted_pdfs), len(skipped_pdfs))
+    except Exception as exc:
+        logger.error("reset-all: PDF cleanup error: %s", exc)
+    result_details["pdfsDeleted"] = len(deleted_pdfs)
+    result_details["pdfsSkipped"] = len(skipped_pdfs)
+
+    # ── 3. Truncate input.log ─────────────────────────────────────────────────
+    input_log_path = os.path.join(os.path.dirname(__file__), "input.log")
+    try:
+        with open(input_log_path, "w", encoding="utf-8") as _lf:
+            _lf.write("")
+        logger.info("reset-all: input.log truncated")
+        result_details["inputLogCleared"] = True
+    except Exception as exc:
+        logger.warning("reset-all: could not truncate input.log: %s", exc)
+        result_details["inputLogCleared"] = False
+
+    # ── 4. Clear alerts Excel files (keep headers, remove data rows) ──────────
+    import pandas as _pd
+    leader_dir = os.path.join(os.path.dirname(__file__), "Blockchain", "leader")
+    excel_files_to_clear = {
+        "alerts.xlsx": os.path.join(leader_dir, "alerts.xlsx"),
+        "alerts_backup.xlsx": os.path.join(leader_dir, "alerts_backup.xlsx"),
+        "excel2.xlsx": os.path.join(leader_dir, "excel2.xlsx"),
+    }
+    excel_results: dict = {}
+    for xname, xpath in excel_files_to_clear.items():
+        try:
+            if os.path.exists(xpath):
+                _df_existing = _pd.read_excel(xpath)
+                _pd.DataFrame(columns=_df_existing.columns).to_excel(xpath, index=False)
+                logger.info("reset-all: cleared %s (had %d rows)", xname, len(_df_existing))
+                excel_results[xname] = "cleared"
+            else:
+                excel_results[xname] = "not found"
+        except Exception as exc:
+            logger.warning("reset-all: could not clear %s: %s", xname, exc)
+            excel_results[xname] = f"error: {exc}"
+    result_details["excelFiles"] = excel_results
+
+    # ── 5. Reset leader blockchain to genesis ─────────────────────────────────
+    try:
+        _leader_module.blockchain.reset_chain()
+        logger.info("reset-all: leader blockchain reset to genesis")
+        result_details["leaderBlockchainReset"] = True
+    except Exception as exc:
+        logger.warning("reset-all: could not reset leader blockchain: %s", exc)
+        result_details["leaderBlockchainReset"] = False
+
+    # ── 6. Reset worker blockchain(s) via HTTP ────────────────────────────────
+    import requests as _req
+    worker_reset_results: dict = {}
+    try:
+        _workers = _leader_module.worker_manager.registry.get("workers", [])
+        for _w in _workers:
+            _wid = _w.get("id", "?")
+            _wurl = f"http://127.0.0.1:{_w.get('port', 5001)}/admin/reset"
+            try:
+                _wresp = _req.post(_wurl, timeout=4)
+                worker_reset_results[f"worker{_wid}"] = _wresp.status_code
+                logger.info("reset-all: worker %s reset → %d", _wid, _wresp.status_code)
+            except Exception as exc:
+                logger.warning("reset-all: worker %s reset error: %s", _wid, exc)
+                worker_reset_results[f"worker{_wid}"] = f"unreachable: {exc}"
+    except Exception as exc:
+        logger.warning("reset-all: worker reset loop failed: %s", exc)
+    result_details["workerBlockchainsReset"] = worker_reset_results
+
+    # ── Push SSE so connected UIs refresh immediately ─────────────────────────
+    event_bus.emit_threadsafe("alerts.changed", {"trigger": "reset_all"})
+
+    return JSONResponse({
+        "success": True,
+        "message": "Complete system reset successful. All data has been cleared.",
+        "details": result_details,
+    })
 
 # ---------------------------------------------------------------------------
 # SSE event stream for real-time frontend updates

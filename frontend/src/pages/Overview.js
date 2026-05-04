@@ -9,11 +9,13 @@ import {
   TrendingDown,
   Activity,
   Globe,
-  Eye,
   Bell,
   Search,
   X,
-  Trash2
+  Trash2,
+  RotateCcw,
+  Lock,
+  AlertOctagon
 } from 'lucide-react';
 import {
   AreaChart,
@@ -58,10 +60,73 @@ const Overview = () => {
   const [overviewData, setOverviewData] = useState(DEFAULT_OVERVIEW_DATA);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
+  const [assetCount, setAssetCount] = useState(0);
+
+  // Reset All modal state
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetError, setResetError] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+
+  const handleResetAll = async () => {
+    if (!resetPassword.trim()) {
+      setResetError('Please enter your password.');
+      return;
+    }
+    setResetLoading(true);
+    setResetError('');
+    try {
+      // Get the currently logged-in user's email from localStorage
+      const stored = localStorage.getItem('userProfile');
+      const profile = stored ? JSON.parse(stored) : {};
+      const email = (profile.email || '').trim();
+      if (!email) {
+        setResetError('Could not determine the logged-in user. Please log in again.');
+        setResetLoading(false);
+        return;
+      }
+      const response = await fetch(`${API_BASE_URL}/api/reset-all`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password: resetPassword }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setResetError(data.message || 'Reset failed. Please try again.');
+        setResetLoading(false);
+        return;
+      }
+      setResetSuccess(true);
+      setResetPassword('');
+      // Refresh overview data after reset
+      setTimeout(() => {
+        setIsResetModalOpen(false);
+        setResetSuccess(false);
+        fetchOverview();
+      }, 2000);
+    } catch (err) {
+      setResetError('Server error. Please try again later.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   // Notifications state
   const [notifications, setNotifications] = useState([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
+
+  const fetchAssetCount = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/assets`, { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setAssetCount(Array.isArray(data) ? data.length : 0);
+      }
+    } catch { /* silently fail */ }
+  };
 
   const fetchOverview = async () => {
     setErrorMessage('');
@@ -135,6 +200,17 @@ const Overview = () => {
     }
   };
 
+  const todayName = new Date().toLocaleDateString('en-US', { weekday: 'short' });
+  const threatsToday = (overviewData.threatActivity ?? []).find(d => d.name === todayName)?.threats ?? 0;
+  const yesterdayName = new Date(Date.now() - 86400000).toLocaleDateString('en-US', { weekday: 'short' });
+  const threatsYesterday = (overviewData.threatActivity ?? []).find(d => d.name === yesterdayName)?.threats ?? 0;
+  const threatsTodayChange = (() => {
+    if (threatsYesterday <= 0) return threatsToday > 0 ? '+100%' : '0%';
+    const pct = Math.round(((threatsToday - threatsYesterday) / threatsYesterday) * 100);
+    return (pct >= 0 ? '+' : '') + pct + '%';
+  })();
+  const threatsTodayTrend = threatsToday >= threatsYesterday ? 'up' : 'down';
+
   const stats = [
     {
       title: 'Active Threats',
@@ -145,10 +221,10 @@ const Overview = () => {
       color: 'red'
     },
     {
-      title: 'Alerts Today',
-      value: String(overviewData.stats.alertsToday?.value ?? 0),
-      change: overviewData.stats.alertsToday?.change || '0%',
-      trend: overviewData.stats.alertsToday?.trend || 'up',
+      title: 'Threats Today',
+      value: String(threatsToday),
+      change: threatsTodayChange,
+      trend: threatsTodayTrend,
       icon: AlertTriangle,
       color: 'yellow'
     },
@@ -161,12 +237,11 @@ const Overview = () => {
       color: 'orange'
     },
     {
-      title: 'Protected Assets',
-      value: String(overviewData.stats.protectedAssets?.value ?? 0),
-      change: overviewData.stats.protectedAssets?.change || '0%',
-      trend: overviewData.stats.protectedAssets?.trend || 'up',
+      title: 'Assets',
+      value: String(assetCount),
       icon: Server,
-      color: 'cyan'
+      color: 'cyan',
+      path: '/assets'
     }
   ];
 
@@ -244,12 +319,18 @@ const Overview = () => {
   useEffect(() => {
     fetchOverview();
     fetchNotifications();
+    fetchAssetCount();
 
     // Fallback safety-net poll (60s) in case SSE connection drops
     const pollTimer = setInterval(() => {
       fetchOverview();
       fetchNotifications();
     }, 60000);
+
+    // Fast poll for asset count so card stays in sync with Assets page
+    const assetPollTimer = setInterval(() => {
+      fetchAssetCount();
+    }, 10000);
 
     const handleClickOutside = (event) => {
       if (notificationRef.current && !notificationRef.current.contains(event.target)) {
@@ -272,6 +353,7 @@ const Overview = () => {
 
     return () => {
       clearInterval(pollTimer);
+      clearInterval(assetPollTimer);
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
@@ -280,6 +362,7 @@ const Overview = () => {
   const unreadCount = notifications.length;
 
   return (
+    <>
     <div className="overview">
       <div className="page-header">
         <div className="header-content">
@@ -402,16 +485,30 @@ const Overview = () => {
             <span className="status-dot green"></span>
             Production
           </div>
-          <button className="btn btn-primary" onClick={() => navigate('/reports')}>
-            <Eye size={16} />
-            View Report
+          <button
+            className="btn btn-danger-outline"
+            onClick={() => {
+              setIsResetModalOpen(true);
+              setResetError('');
+              setResetPassword('');
+              setResetSuccess(false);
+              setShowResetPassword(false);
+            }}
+          >
+            <RotateCcw size={16} />
+            Reset All
           </button>
         </div>
       </div>
 
       <div className="stats-grid">
         {stats.map((stat, index) => (
-          <div key={index} className={`stat-card stat-${stat.color}`}>
+          <div
+            key={index}
+            className={`stat-card stat-${stat.color}`}
+            onClick={() => stat.path && navigate(stat.path)}
+            style={{ cursor: stat.path ? 'pointer' : 'default' }}
+          >
             <div className="stat-icon">
               <stat.icon size={24} />
             </div>
@@ -419,11 +516,14 @@ const Overview = () => {
               <span className="stat-title">{stat.title}</span>
               <div className="stat-value-row">
                 <span className="stat-value">{stat.value}</span>
-                <span className={`stat-change ${stat.trend}`}>
-                  {stat.trend === 'up' ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                  {stat.change}
-                </span>
+                {stat.trend && (
+                  <span className={`stat-change ${stat.trend}`}>
+                    {stat.trend === 'up' ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                    {stat.change}
+                  </span>
+                )}
               </div>
+              {stat.sub && <span className="stat-sub">{stat.sub}</span>}
             </div>
           </div>
         ))}
@@ -586,8 +686,8 @@ const Overview = () => {
             <h3 className="card-title">Network Traffic</h3>
           </div>
           <div className="chart-container">
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={networkData}>
+            <ResponsiveContainer width="100%" height={320}>
+              <LineChart data={networkData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#2a2a5a" />
                 <XAxis dataKey="time" stroke="#6a6a8a" />
                 <YAxis stroke="#6a6a8a" />
@@ -676,6 +776,98 @@ const Overview = () => {
         </div>
       </div>
     </div>
+
+      {/* ── Reset All Confirmation Modal ── */}
+      {isResetModalOpen && (
+        <div className="reset-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) { setIsResetModalOpen(false); setResetPassword(''); setResetError(''); } }}>
+          <div className="reset-modal">
+            <div className="reset-modal-header">
+              <div className="reset-modal-icon">
+                <AlertOctagon size={28} />
+              </div>
+              <h2 className="reset-modal-title">Reset All Data</h2>
+              <button className="reset-modal-close" onClick={() => { setIsResetModalOpen(false); setResetPassword(''); setResetError(''); }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {resetSuccess ? (
+              <div className="reset-success-state">
+                <div className="reset-success-icon">
+                  <svg className="reset-checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                    <circle className="reset-checkmark-circle" cx="26" cy="26" r="25" fill="none" />
+                    <path className="reset-checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+                  </svg>
+                </div>
+                <p className="reset-success-text">All data has been reset successfully!</p>
+              </div>
+            ) : (
+              <>
+                <div className="reset-modal-warning">
+                  <p>This action will <strong>permanently delete</strong> all of the following:</p>
+                  <ul className="reset-warning-list">
+                    <li><Trash2 size={14} /> All alerts &amp; threat statuses (DB)</li>
+                    <li><Trash2 size={14} /> All report runs &amp; PDF files</li>
+                    <li><Trash2 size={14} /> All senders &amp; notifications</li>
+                    <li><Trash2 size={14} /> All input logs (input.log)</li>
+                    <li><Trash2 size={14} /> All alert data in Excel files (alerts.xlsx)</li>
+                    <li><Trash2 size={14} /> Blockchain reset to genesis block</li>
+                  </ul>
+                  <p className="reset-warning-note">Tables &amp; files remain intact. Only data is erased. This cannot be undone.</p>
+                </div>      
+
+                <div className="reset-password-group">
+                  <label className="reset-password-label">
+                    <Lock size={14} />
+                    Confirm your password to proceed
+                  </label>
+                  <div className="reset-password-input-wrap">
+                    <input
+                      type={showResetPassword ? 'text' : 'password'}
+                      className={`reset-password-input ${resetError ? 'has-error' : ''}`}
+                      placeholder="Enter your current password"
+                      value={resetPassword}
+                      onChange={(e) => { setResetPassword(e.target.value); setResetError(''); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleResetAll(); }}
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      className="reset-show-pw-btn"
+                      onClick={() => setShowResetPassword(!showResetPassword)}
+                    >
+                      {showResetPassword ? '🙈' : '👁️'}
+                    </button>
+                  </div>
+                  {resetError && <p className="reset-error-msg">{resetError}</p>}
+                </div>
+
+                <div className="reset-modal-actions">
+                  <button
+                    className="btn-reset-cancel"
+                    onClick={() => { setIsResetModalOpen(false); setResetPassword(''); setResetError(''); }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className={`btn-reset-confirm ${resetLoading ? 'loading' : ''}`}
+                    onClick={handleResetAll}
+                    disabled={resetLoading}
+                  >
+                    {resetLoading ? (
+                      <span className="reset-spinner"></span>
+                    ) : (
+                      <RotateCcw size={15} />
+                    )}
+                    {resetLoading ? 'Resetting...' : 'Reset All Data'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

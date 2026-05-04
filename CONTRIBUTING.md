@@ -716,7 +716,7 @@ Still have questions? We're here to help:
 - 💬 **GitHub Discussions** — [Start a discussion](https://github.com/cyberhub2025/CyberDefenseX_Ultra/discussions)
 - 🐛 **GitHub Issues** — [Browse or open issues](https://github.com/cyberhub2025/CyberDefenseX_Ultra/issues)
 - 📖 **Deep Wiki** — [Full technical docs](https://deepwiki.com/cyberhub2025/CyberDefenseX_Ultra)
-- 🌐 **Live Demo** — [Try the platform](https://cyberhub2025.github.io/CyberDefenseX_Ultra/)
+- 🌐 **Live Demo** — [Try the platform](https://cyberdefensex.dpdns.org/)
 
 ---
 
