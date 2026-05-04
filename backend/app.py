@@ -1291,6 +1291,14 @@ async def logout(request: Request):
 
 @app.get("/auth/google")
 async def google_login(request: Request):
+    referer = request.headers.get("referer")
+    if referer:
+        from urllib.parse import urlparse
+        parsed = urlparse(referer)
+        origin = f"{parsed.scheme}://{parsed.netloc}"
+        if origin in ALLOWED_ORIGINS:
+            request.session["frontend_origin"] = origin
+
     redirect_uri = f"{BACKEND_URL}/auth/google/callback"
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
@@ -1349,10 +1357,12 @@ async def google_callback(request: Request):
                 "provider": "google",
             }
         )
-        return RedirectResponse(url=f"{FRONTEND_URL}/oauth/success?{params}", status_code=302)
+        frontend_origin = request.session.pop("frontend_origin", ALLOWED_ORIGINS[0] if ALLOWED_ORIGINS else "http://localhost:3000")
+        return RedirectResponse(url=f"{frontend_origin}/#/oauth/success?{params}", status_code=302)
     except Exception as exc:
         params = urlencode({"error": str(exc)})
-        return RedirectResponse(url=f"{FRONTEND_URL}/login?{params}", status_code=302)
+        frontend_origin = request.session.get("frontend_origin", ALLOWED_ORIGINS[0] if ALLOWED_ORIGINS else "http://localhost:3000")
+        return RedirectResponse(url=f"{frontend_origin}/#/login?{params}", status_code=302)
 
 
 @app.get("/api/auth/google/callback")
@@ -1424,6 +1434,14 @@ async def api_google_callback(request: Request):
 
 @app.get("/auth/github")
 async def github_login(request: Request):
+    referer = request.headers.get("referer")
+    if referer:
+        from urllib.parse import urlparse
+        parsed = urlparse(referer)
+        origin = f"{parsed.scheme}://{parsed.netloc}"
+        if origin in ALLOWED_ORIGINS:
+            request.session["frontend_origin"] = origin
+
     redirect_uri = f"{BACKEND_URL}/auth/github/callback"
     return await oauth.github.authorize_redirect(request, redirect_uri)
 
@@ -1485,10 +1503,12 @@ async def github_callback(request: Request):
                 "provider": "github",
             }
         )
-        return RedirectResponse(url=f"{FRONTEND_URL}/oauth/success?{params}", status_code=302)
+        frontend_origin = request.session.pop("frontend_origin", ALLOWED_ORIGINS[0] if ALLOWED_ORIGINS else "http://localhost:3000")
+        return RedirectResponse(url=f"{frontend_origin}/#/oauth/success?{params}", status_code=302)
     except Exception as exc:
         params = urlencode({"error": str(exc)})
-        return RedirectResponse(url=f"{FRONTEND_URL}/login?{params}", status_code=302)
+        frontend_origin = request.session.get("frontend_origin", ALLOWED_ORIGINS[0] if ALLOWED_ORIGINS else "http://localhost:3000")
+        return RedirectResponse(url=f"{frontend_origin}/#/login?{params}", status_code=302)
 
 
 @app.get("/api/auth/github/callback")
