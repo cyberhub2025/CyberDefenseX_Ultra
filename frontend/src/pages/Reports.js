@@ -81,8 +81,20 @@ const Reports = () => {
     fetchReports();
   }, []);
 
-  const handleDeleteReport = (reportId) => {
+  const handleDeleteReport = async (reportId) => {
+    // Optimistic removal
+    const previous = reportsData;
     setReportsData(prev => prev.filter(r => r.id !== reportId));
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/reports/${reportId}`, { method: 'DELETE' });
+      if (!response.ok) {
+        throw new Error('Failed to delete report');
+      }
+    } catch (error) {
+      console.error(error);
+      // Rollback on failure
+      setReportsData(previous);
+    }
   };
 
   const handleGenerateReport = async () => {

@@ -908,9 +908,22 @@ def build_overview_payload(alerts: List[Dict[str, str]]) -> Dict[str, Any]:
             }
         )
 
+    def _extract_id_number(alert):
+        """Extract the numeric portion of a threat ID for sorting (e.g. 'ALERT-0042' -> 42)."""
+        raw = alert.get("id") or ""
+        # Try to pull digits from the end (handles 'ALERT-0042', 'THR-123', etc.)
+        match = re.search(r"(\d+)$", raw)
+        if match:
+            return int(match.group(1))
+        # Fallback: try converting the whole thing
+        try:
+            return int(raw)
+        except (ValueError, TypeError):
+            return 0
+
     sorted_alerts = sorted(
         parsed_rows,
-        key=lambda a: a["detected_dt"] or datetime.min,
+        key=_extract_id_number,
         reverse=True,
     )
     recent_alerts = [
@@ -1744,6 +1757,34 @@ async def api_download_report(report_id: str):
         filename=row["file_name"],
     )
 
+
+@app.delete("/api/reports/{report_id}")
+async def api_delete_report(report_id: str):
+    conn = get_app_data_db_connection()
+    try:
+        row = conn.execute(
+            "SELECT file_path FROM report_runs WHERE report_id = ?",
+            (report_id,),
+        ).fetchone()
+
+        if not row:
+            return JSONResponse({"message": "Report not found."}, status_code=404)
+
+        file_path = row["file_path"]
+
+        conn.execute("DELETE FROM report_runs WHERE report_id = ?", (report_id,))
+        conn.commit()
+    finally:
+        conn.close()
+
+    # Delete the PDF file from disk
+    if file_path and os.path.exists(file_path):
+        try:
+            os.remove(file_path)
+        except OSError:
+            pass  # File already gone or locked – DB row is already removed
+
+    return JSONResponse({"message": "Report deleted successfully.", "id": report_id})
 
 ATTACK_TYPE_COLORS = [
     "#b07cf8",  # purple

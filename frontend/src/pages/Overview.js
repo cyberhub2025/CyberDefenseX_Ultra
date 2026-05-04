@@ -239,7 +239,6 @@ const Overview = () => {
     {
       title: 'Assets',
       value: String(assetCount),
-      sub: 'Monitored assets',
       icon: Server,
       color: 'cyan',
       path: '/assets'
