@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import "./GetStarted.css";
 
 
@@ -70,7 +70,25 @@ const resetChecklist = [
 ];
 
 export default function GetStarted() {
-
+  /* ── Inject chatbot script ── */
+  useEffect(() => {
+    const loadChatbot = () => {
+      const script = document.createElement("script");
+      script.src = "https://www.chatbase.co/embed.min.js";
+      script.id = "loJNXxgt4BdTW2FMLeddK";
+      script.domain = "www.chatbase.co";
+      script.async = true;
+      script.onerror = () => console.log("Chatbot loaded");
+      document.body.appendChild(script);
+    };
+    
+    if (document.readyState === "complete") {
+      loadChatbot();
+    } else {
+      window.addEventListener("load", loadChatbot);
+      return () => window.removeEventListener("load", loadChatbot);
+    }
+  }, []);
 
   return (
     <div className="gs-page">

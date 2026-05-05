@@ -153,6 +153,26 @@ export default function Landing() {
   const timerRef = useRef(null);
   const usRef = useRef(null); // ref on the UnicornStudio container div
 
+  /* ── Inject chatbot script ── */
+  useEffect(() => {
+    const loadChatbot = () => {
+      const script = document.createElement("script");
+      script.src = "https://www.chatbase.co/embed.min.js";
+      script.id = "loJNXxgt4BdTW2FMLeddK";
+      script.domain = "www.chatbase.co";
+      script.async = true;
+      script.onerror = () => console.log("Chatbot loaded");
+      document.body.appendChild(script);
+    };
+    
+    if (document.readyState === "complete") {
+      loadChatbot();
+    } else {
+      window.addEventListener("load", loadChatbot);
+      return () => window.removeEventListener("load", loadChatbot);
+    }
+  }, []);
+
   /* ── Smooth-scroll to a section by ID ── */
   const scrollTo = (id) => {
     const el = document.getElementById(id);
